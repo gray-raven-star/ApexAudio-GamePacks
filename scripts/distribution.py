@@ -1,4 +1,4 @@
-"""Publish a checked game pack and render the official download index."""
+"""Publish a checked game pack and generate the README download table."""
 
 import argparse
 from datetime import datetime, timezone
@@ -14,7 +14,10 @@ from urllib.parse import quote
 
 
 REGISTRY = Path("registry.json")
+README = Path("README.md")
 SOURCE = "https://github.com/gray-raven-star/ApexAudio"
+START = "<!-- BEGIN GENERATED DOWNLOADS -->"
+END = "<!-- END GENERATED DOWNLOADS -->"
 
 
 def read_registry():
@@ -101,53 +104,55 @@ def publish(directory, slug, version):
     REGISTRY.write_text(json.dumps(registry, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
-def render(output):
+def markdown_cell(value):
+    text = escape(" ".join(value.split())).replace("|", "&#124;")
+    return re.sub(r"([\\`*_\[\]~])", r"\\\1", text)
+
+
+def markdown_link(label, url):
+    if not url.startswith("https://github.com/"):
+        raise ValueError(f"Expected a GitHub download or release URL: {url}")
+    return f"[{label}](<{quote(url, safe=':/%.-_~')}>)"
+
+
+def render(check):
     registry = read_registry()
     games = {}
     for pack in registry["packs"]:
         games.setdefault(pack["slug"], []).append(pack)
 
-    rows = []
-    for releases in games.values():
+    rows = [
+        "| Game | Latest | Engine | Game builds (SHA-256) | Package | History |",
+        "| --- | --- | --- | --- | --- | --- |",
+    ]
+    for _, releases in sorted(games.items()):
         releases.sort(key=lambda pack: version_key(pack["version"]), reverse=True)
         latest = releases[0]
-        history = "".join(
-            f'<li><a href="{escape(pack["releaseUrl"])}">v{escape(pack["version"])}</a></li>'
+        history = ", ".join(
+            markdown_link(f'v{pack["version"]}', pack["releaseUrl"])
             for pack in releases
         )
         builds = "<br>".join(
-            f'{escape(build["executable"])} <code>{escape(build["sha256"])}</code>'
+            f'{markdown_cell(build["executable"])} <code>{markdown_cell(build["sha256"])}</code>'
             for build in latest["compatibility"]["gameBuilds"]
         )
-        rows.append(
-            f'<tr><th scope="row">{escape(latest["game"])}</th><td>{escape(latest["version"])}</td>'
-            f'<td>{escape(latest["engine"])}</td><td>{builds or "Unknown"}</td>'
-            f'<td><a href="{escape(latest["downloadUrl"])}">Download</a></td>'
-            f'<td><details><summary>Releases</summary><ul>{history}</ul></details></td></tr>'
+        cells = (
+            markdown_cell(latest["game"]), latest["version"], markdown_cell(latest["engine"]),
+            builds or "Unknown", markdown_link("Download", latest["downloadUrl"]), history,
         )
+        rows.append("| " + " | ".join(cells) + " |")
 
-    body = "".join(rows) or '<tr><td colspan="6">No official packs have been published here yet.</td></tr>'
-    output.mkdir(parents=True, exist_ok=True)
-    (output / "index.html").write_text(f"""<!doctype html>
-<html lang="en">
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ApexAudio GamePacks</title>
-<style>
-body {{ font: 1rem system-ui, sans-serif; margin: 2rem auto; max-width: 75rem; padding: 0 1rem; }}
-table {{ width: 100%; border-collapse: collapse; text-align: left; }}
-th, td {{ border-bottom: 1px solid gray; padding: .6rem; vertical-align: top; }}
-code {{ overflow-wrap: anywhere; }}
-</style>
-<h1>ApexAudio GamePacks</h1>
-<p>Official packages for <a href="{SOURCE}">ApexAudio</a> · <a href="registry.json">JSON registry</a></p>
-<table>
-<thead><tr><th>Game</th><th>Latest</th><th>Engine</th><th>Game builds (SHA-256)</th><th>Package</th><th>History</th></tr></thead>
-<tbody>{body}</tbody>
-</table>
-</html>
-""", encoding="utf-8")
-    (output / "registry.json").write_bytes(REGISTRY.read_bytes())
+    body = "\n".join(rows) if games else "No official packs have been published here yet."
+    readme = README.read_text(encoding="utf-8")
+    if readme.count(START) != 1 or readme.count(END) != 1 or readme.index(START) > readme.index(END):
+        raise ValueError("README must contain one ordered pair of generated-download markers")
+    prefix = readme.split(START, 1)[0]
+    suffix = readme.split(END, 1)[1]
+    expected = f"{prefix}{START}\n\n{body}\n\n{END}{suffix}"
+    if check and readme != expected:
+        raise SystemExit("README download table is stale. Run python scripts/distribution.py render.")
+    if readme != expected:
+        README.write_text(expected, encoding="utf-8")
 
 
 if __name__ == "__main__":
@@ -158,9 +163,9 @@ if __name__ == "__main__":
     publish_command.add_argument("slug")
     publish_command.add_argument("version")
     render_command = commands.add_parser("render")
-    render_command.add_argument("directory", type=Path)
+    render_command.add_argument("--check", action="store_true")
     args = parser.parse_args()
     if args.command == "publish":
         publish(args.directory, args.slug, args.version)
     else:
-        render(args.directory)
+        render(args.check)

@@ -19,11 +19,13 @@ on:
   push:
     branches: [main]
     paths:
+      - README.md
       - registry.json
       - scripts/distribution.py
       - .github/workflows/publish-pack.yml
   pull_request:
     paths:
+      - README.md
       - registry.json
       - scripts/distribution.py
       - .github/workflows/publish-pack.yml
@@ -128,46 +130,28 @@ jobs:
         with:
           name: checked-package
           path: ${{ runner.temp }}/checked-package
-      - name: Publish Release and update registry
+      - name: Publish Release and update the download index
         env:
           GH_TOKEN: ${{ github.token }}
           PACK_SLUG: ${{ inputs.slug }}
           PACK_VERSION: ${{ inputs.version }}
         run: |
           python3 scripts/distribution.py publish "$RUNNER_TEMP/checked-package" "$PACK_SLUG" "$PACK_VERSION"
+          python3 scripts/distribution.py render
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add registry.json
+          git add registry.json README.md
           if ! git diff --cached --quiet; then
             git commit -m "Index ${PACK_SLUG} v${PACK_VERSION}"
             git push origin HEAD:main
           fi
 
-  render:
-    needs: publish
-    if: ${{ !cancelled() && (github.event_name != 'workflow_dispatch' || needs.publish.result == 'success') }}
+  verify-index:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          ref: ${{ github.event_name == 'pull_request' && github.ref || 'main' }}
           persist-credentials: false
-      - run: python3 scripts/distribution.py render _site
-      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
-        if: github.ref == 'refs/heads/main'
-
-  deploy:
-    needs: render
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e
-        id: deployment
+      - run: python3 scripts/distribution.py render --check
