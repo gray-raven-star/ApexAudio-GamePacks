@@ -1,8 +1,6 @@
-# ApexAudio-GamePacks
-Official ApexAudio game adaptation packs and releases.
 # ApexAudio GamePacks
 
-Official game adaptation packages for ApexAudio.
+Game adaptation packages for ApexAudio.
 
 ## Download
 
