@@ -1,20 +1,19 @@
 name: Publish game pack
 
 on:
+  schedule:
+    - cron: '17 1 * * *'
   workflow_dispatch:
     inputs:
       slug:
-        description: Directory name under gamepacks/
-        required: true
+        description: Directory name under gamepacks/ (blank to scan automatically)
         type: string
       version:
-        description: Version in the package manifest (MAJOR.MINOR.PATCH)
-        required: true
+        description: Manifest version (blank to scan automatically)
         type: string
       source_ref:
-        description: Commit, branch, or tag in ApexAudio
+        description: Commit, branch, or tag in ApexAudio for a single-package run
         default: main
-        required: true
         type: string
   push:
     branches: [main]
@@ -22,12 +21,14 @@ on:
       - README.md
       - registry.json
       - scripts/distribution.py
+      - scripts/test_distribution.py
       - .github/workflows/publish-pack.yml
   pull_request:
     paths:
       - README.md
       - registry.json
       - scripts/distribution.py
+      - scripts/test_distribution.py
       - .github/workflows/publish-pack.yml
 
 permissions:
@@ -38,21 +39,62 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  plan:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      packs: ${{ steps.plan.outputs.packs }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        if: (inputs.slug || '') == '' && (inputs.version || '') == ''
+        with:
+          repository: gray-raven-star/ApexAudio
+          ref: main
+          path: source
+          persist-credentials: false
+      - name: Select package versions
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PACK_SLUG: ${{ inputs.slug }}
+          PACK_VERSION: ${{ inputs.version }}
+          SOURCE_REF: ${{ inputs.source_ref || 'main' }}
+        run: |
+          if [[ -z "$PACK_SLUG" && -z "$PACK_VERSION" ]]; then
+            packs="$(python3 scripts/distribution.py discover source)"
+          elif [[ "$PACK_SLUG" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ && "$PACK_VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            packs="$(jq -cn --arg slug "$PACK_SLUG" --arg version "$PACK_VERSION" --arg ref "$SOURCE_REF" '[{slug:$slug, version:$version, source_ref:$ref}]')"
+          else
+            echo 'Provide a valid slug and version together, or leave both blank for an automatic scan.' >&2
+            exit 1
+          fi
+          echo "Selected packages: $packs"
+          printf 'packs=%s\n' "$packs" >> "$GITHUB_OUTPUT"
+
   build:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    needs: plan
+    if: needs.plan.outputs.packs != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        pack: ${{ fromJSON(needs.plan.outputs.packs) }}
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           repository: gray-raven-star/ApexAudio
-          ref: ${{ inputs.source_ref }}
+          ref: ${{ matrix.pack.source_ref }}
           persist-credentials: false
       - name: Verify package selection
         shell: pwsh
         env:
-          PACK_SLUG: ${{ inputs.slug }}
-          PACK_VERSION: ${{ inputs.version }}
+          PACK_SLUG: ${{ matrix.pack.slug }}
+          PACK_VERSION: ${{ matrix.pack.version }}
         run: |
           if ($env:PACK_SLUG -cnotmatch '^[a-z0-9]+(?:-[a-z0-9]+)*\z' -or $env:PACK_VERSION -cnotmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\z') {
             throw 'Use a lowercase game slug and a MAJOR.MINOR.PATCH version.'
@@ -68,7 +110,7 @@ jobs:
       - name: Build and check package offline
         shell: pwsh
         env:
-          PACK_SLUG: ${{ inputs.slug }}
+          PACK_SLUG: ${{ matrix.pack.slug }}
         run: |
           $sdk = dotnet --list-sdks | ForEach-Object { ($_ -split ' ')[0] } |
             Where-Object { $_ -match '^8\.0\.[0-9]+$' } |
@@ -111,13 +153,14 @@ jobs:
           } | ConvertTo-Json -Depth 10 | Set-Content -Encoding utf8 release-staging/package.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: checked-package
+          name: checked-package-${{ matrix.pack.slug }}
           path: release-staging/
           if-no-files-found: error
           retention-days: 1
 
   publish:
-    needs: build
+    needs: [plan, build]
+    if: ${{ !cancelled() && (needs.build.result == 'success' || needs.build.result == 'failure') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -128,26 +171,37 @@ jobs:
           ref: main
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          name: checked-package
-          path: ${{ runner.temp }}/checked-package
+          pattern: checked-package-*
+          path: ${{ runner.temp }}/checked-packages
       - name: Publish Release and update the download index
         env:
           GH_TOKEN: ${{ github.token }}
-          PACK_SLUG: ${{ inputs.slug }}
-          PACK_VERSION: ${{ inputs.version }}
+          PACKS: ${{ needs.plan.outputs.packs }}
         run: |
-          python3 scripts/distribution.py publish "$RUNNER_TEMP/checked-package" "$PACK_SLUG" "$PACK_VERSION"
+          failed=0
+          while IFS= read -r pack; do
+            slug="$(jq -er .slug <<< "$pack")"
+            version="$(jq -er .version <<< "$pack")"
+            artifact="$RUNNER_TEMP/checked-packages/checked-package-$slug"
+            if [[ ! -d "$artifact" ]]; then
+              echo "Build artifact missing for $slug v$version" >&2
+              failed=1
+            elif ! python3 scripts/distribution.py publish "$artifact" "$slug" "$version"; then
+              failed=1
+            fi
+          done < <(jq -c '.[]' <<< "$PACKS")
           python3 scripts/distribution.py render
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add registry.json README.md
           if ! git diff --cached --quiet; then
-            git commit -m "Index ${PACK_SLUG} v${PACK_VERSION}"
+            git commit -m 'Update the game pack download index'
             git push origin HEAD:main
           fi
+          exit "$failed"
 
   verify-index:
-    if: github.event_name != 'workflow_dispatch'
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -155,3 +209,4 @@ jobs:
         with:
           persist-credentials: false
       - run: python3 scripts/distribution.py render --check
+      - run: python3 -m unittest discover -s scripts
