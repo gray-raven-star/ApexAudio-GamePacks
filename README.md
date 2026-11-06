@@ -33,6 +33,8 @@ Each package version has a [GitHub Release](https://github.com/gray-raven-star/A
 
 To scan immediately, run **Publish game pack** from the Actions tab on this repository's `main` branch and leave `slug` and `version` empty.
 
+The scan removes index links to releases that are no longer public and keeps their versions as the threshold for future automatic releases. It also recovers public releases missing from the index using the source commit recorded at release time, even if ApexAudio `main` has advanced. Use the manual single-package run to publish a removed version again.
+
 ## Publish one package manually
 
 In the same workflow, supply both the lowercase package directory name as `slug` and the manifest version in `MAJOR.MINOR.PATCH` format as `version`. The ApexAudio `source_ref` defaults to `main`. Use a commit SHA to pin the source across retries.
