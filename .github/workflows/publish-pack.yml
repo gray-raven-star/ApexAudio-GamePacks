@@ -1,0 +1,173 @@
+name: Publish game pack
+
+on:
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: Directory name under gamepacks/
+        required: true
+        type: string
+      version:
+        description: Version in the package manifest (MAJOR.MINOR.PATCH)
+        required: true
+        type: string
+      source_ref:
+        description: Commit, branch, or tag in ApexAudio
+        default: main
+        required: true
+        type: string
+  push:
+    branches: [main]
+    paths:
+      - registry.json
+      - scripts/distribution.py
+      - .github/workflows/publish-pack.yml
+  pull_request:
+    paths:
+      - registry.json
+      - scripts/distribution.py
+      - .github/workflows/publish-pack.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: distribution-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: gray-raven-star/ApexAudio
+          ref: ${{ inputs.source_ref }}
+          persist-credentials: false
+      - name: Verify package selection
+        shell: pwsh
+        env:
+          PACK_SLUG: ${{ inputs.slug }}
+          PACK_VERSION: ${{ inputs.version }}
+        run: |
+          if ($env:PACK_SLUG -cnotmatch '^[a-z0-9]+(?:-[a-z0-9]+)*\z' -or $env:PACK_VERSION -cnotmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\z') {
+            throw 'Use a lowercase game slug and a MAJOR.MINOR.PATCH version.'
+          }
+          $definition = "gamepacks/$env:PACK_SLUG"
+          $manifest = Get-Content -Raw -LiteralPath "$definition/manifest.json" | ConvertFrom-Json
+          if ($manifest.version -cne $env:PACK_VERSION -or $manifest.id -cnotmatch '^[a-z0-9][a-z0-9.-]{2,79}\z') {
+            throw 'The requested version must match the manifest and the package ID must be valid.'
+          }
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '8.0.x'
+      - name: Build and check package offline
+        shell: pwsh
+        env:
+          PACK_SLUG: ${{ inputs.slug }}
+        run: |
+          $sdk = dotnet --list-sdks | ForEach-Object { ($_ -split ' ')[0] } |
+            Where-Object { $_ -match '^8\.0\.[0-9]+$' } |
+            Sort-Object { [version]$_ } -Descending | Select-Object -First 1
+          if (-not $sdk) { throw '.NET 8 SDK is unavailable.' }
+          @{ sdk = @{ version = $sdk; rollForward = 'disable' } } |
+            ConvertTo-Json | Set-Content -Encoding utf8 global.json
+
+          $zip = Join-Path $env:RUNNER_TEMP 'zig.zip'
+          Invoke-WebRequest -Uri 'https://ziglang.org/download/0.15.2/zig-x86_64-windows-0.15.2.zip' -OutFile $zip
+          if ((Get-FileHash -LiteralPath $zip).Hash -ne '3A0ED1E8799A2F8CE2A6E6290A9FF22E6906F8227865911FB7DDEDC3CC14CB0C') {
+            throw 'Zig download checksum mismatch.'
+          }
+          $zigDir = Join-Path $env:RUNNER_TEMP 'zig'
+          Expand-Archive -LiteralPath $zip -DestinationPath $zigDir
+          $zig = Join-Path $zigDir 'zig-x86_64-windows-0.15.2/zig.exe'
+
+          $definition = "gamepacks/$env:PACK_SLUG"
+          $manifest = Get-Content -Raw -LiteralPath "$definition/manifest.json" | ConvertFrom-Json
+          $game = Get-Content -Raw -LiteralPath "$definition/game.json" | ConvertFrom-Json
+          $asset = "$($manifest.id).gpack"
+          $pack = "dist/packages/$asset"
+          if (Test-Path -LiteralPath $pack) { throw 'Expected a clean package output path.' }
+          ./tools/Build-GamePack.ps1 -DefinitionDirectory $definition -Compiler $zig
+          dotnet run --project tools/DevTools/ApexAudio.DevTools.csproj --configuration Release -- check --pack $pack
+          if ($LASTEXITCODE -ne 0) { throw 'Offline package check failed.' }
+
+          $commit = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot resolve source commit.' }
+          New-Item -ItemType Directory -Path release-staging | Out-Null
+          Copy-Item -LiteralPath $pack -Destination release-staging
+          @{
+            slug = $env:PACK_SLUG
+            packId = $manifest.id
+            version = $manifest.version
+            game = $manifest.name
+            engine = $game.backend
+            compatibility = @{ gameBuilds = @($manifest.games) }
+            sourceCommit = $commit
+          } | ConvertTo-Json -Depth 10 | Set-Content -Encoding utf8 release-staging/package.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: checked-package
+          path: release-staging/
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: main
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: checked-package
+          path: ${{ runner.temp }}/checked-package
+      - name: Publish Release and update registry
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PACK_SLUG: ${{ inputs.slug }}
+          PACK_VERSION: ${{ inputs.version }}
+        run: |
+          python3 scripts/distribution.py publish "$RUNNER_TEMP/checked-package" "$PACK_SLUG" "$PACK_VERSION"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add registry.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Index ${PACK_SLUG} v${PACK_VERSION}"
+            git push origin HEAD:main
+          fi
+
+  render:
+    needs: publish
+    if: ${{ !cancelled() && (github.event_name != 'workflow_dispatch' || needs.publish.result == 'success') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+          persist-credentials: false
+      - run: python3 scripts/distribution.py render _site
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
+        if: github.ref == 'refs/heads/main'
+
+  deploy:
+    needs: render
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e
+        id: deployment
