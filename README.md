@@ -6,19 +6,23 @@ Official game adaptation packages for ApexAudio.
 
 <!-- BEGIN GENERATED DOWNLOADS -->
 
-| Game | Latest | Engine | Game builds (SHA-256) | Package | History |
-| --- | --- | --- | --- | --- | --- |
-| 怪物猎人：世界 | 1.1.0 | Wwise | MonsterHunterWorld.exe <code>C2EBBBD2C49F216D484E31A5219BED419EB1E5E7D206D02CBA040A3AB79D90EA</code> | [Download](<https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/download/pack/monster-hunter-world/v1.1.0/local.monsterhunterworld.gpack>) | [v1.1.0](<https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/tag/pack/monster-hunter-world/v1.1.0>) |
+No official packs have been published here yet.
 
 <!-- END GENERATED DOWNLOADS -->
 
 ## Releases
 
-Each package version has a [GitHub Release](https://github.com/gray-raven-star/ApexAudio-GamePacks/releases) tagged `pack/<slug>/v<version>` with a `.gpack` and its `.sha256` checksum. The download list above is generated from the machine-readable [`registry.json`](registry.json).
+Each package version has a [GitHub Release](https://github.com/gray-raven-star/ApexAudio-GamePacks/releases) titled `适配包：游戏名 v版本` and tagged `pack/<slug>/v<version>`, with a `.gpack` and its `.sha256` checksum. The download list above is generated from the machine-readable [`registry.json`](registry.json).
 
-## Publish a package
+## Automatic publishing
 
-Run **Publish game pack** from the Actions tab on the distribution repository's `main` branch. Supply the lowercase package directory name as `slug`, the manifest version in `MAJOR.MINOR.PATCH` format as `version`, and an ApexAudio source ref as `source_ref`. The source ref defaults to `main`. Use a commit SHA to pin the source across retries.
+**Publish game pack** scans the ApexAudio `main` branch daily at 09:17 China time (01:17 UTC). An indexed package qualifies when its manifest version exceeds its latest version in the registry. A package with no registry entry qualifies when its manifest version is greater than `0.0.0`. The workflow builds selected packages in parallel, then publishes and indexes successful builds one at a time. Check the workflow run for package failures.
+
+To scan immediately, run **Publish game pack** from the Actions tab on this repository's `main` branch and leave `slug` and `version` empty.
+
+## Publish one package manually
+
+In the same workflow, supply both the lowercase package directory name as `slug` and the manifest version in `MAJOR.MINOR.PATCH` format as `version`. The ApexAudio `source_ref` defaults to `main`. Use a commit SHA to pin the source across retries.
 
 The [ApexAudio source repository](https://github.com/gray-raven-star/ApexAudio) must have a buildable `gamepacks/<slug>/` definition at that ref, with `manifest.version` matching the requested version. The workflow uses .NET 8 and Zig 0.15.2 to build the package, runs the offline DevTools package check, and publishes the Release. It then commits the registry and generated download list together. Pull request checks verify that the list matches the registry.
 

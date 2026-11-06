@@ -37,6 +37,40 @@ def gh(*args):
     return subprocess.check_output(["gh", *args], encoding="utf-8").strip()
 
 
+def releases_by_tag():
+    repo = os.environ["GITHUB_REPOSITORY"]
+    pages = json.loads(gh("api", "--paginate", "--slurp", f"repos/{repo}/releases?per_page=100"))
+    return {release["tag_name"]: release for page in pages for release in page}
+
+
+def discover(source, indexed, releases):
+    source_ref = subprocess.check_output(["git", "-C", str(source), "rev-parse", "HEAD"], text=True).strip()
+    latest = {}
+    for pack in indexed:
+        slug, version = pack["slug"], version_key(pack["version"])
+        latest[slug] = max(latest.get(slug, ()), version)
+
+    selected = []
+    for manifest in sorted((source / "gamepacks").glob("*/manifest.json")):
+        slug = manifest.parent.name
+        if slug.startswith("_"):
+            continue
+        version = json.loads(manifest.read_text(encoding="utf-8-sig"))["version"]
+        if version_key(version) <= latest.get(slug, (0, 0, 0)):
+            continue
+        ref = source_ref
+        previous = releases.get(f"pack/{slug}/v{version}")
+        if previous:
+            # A prior run may have published the assets before its registry commit failed.
+            notes = previous.get("body") or ""
+            provenance = re.fullmatch(rf"Source: {re.escape(SOURCE)}/tree/([0-9a-f]{{40}})/gamepacks/{re.escape(slug)}", notes.strip())
+            if not provenance:
+                raise ValueError(f"Cannot recover {previous['tag_name']} without its source commit")
+            ref = provenance[1]
+        selected.append({"slug": slug, "version": version, "source_ref": ref})
+    return selected
+
+
 def checksum(path):
     with path.open("rb") as stream:
         return file_digest(stream, "sha256").hexdigest()
@@ -64,11 +98,10 @@ def publish(directory, slug, version):
     sums = asset.with_suffix(".sha256")
     sums.write_text(f"{checksum(asset)}  {asset.name}\n", encoding="utf-8")
 
-    pages = json.loads(gh("api", "--paginate", "--slurp", f"repos/{repo}/releases?per_page=100"))
-    release = next((item for page in pages for item in page if item["tag_name"] == tag), None)
+    release = releases_by_tag().get(tag)
     if release is None:
         gh("release", "create", tag, "--repo", repo, "--target", os.environ["GITHUB_SHA"],
-           "--draft", "--title", f'{pack["game"]} v{version}', "--notes", notes)
+           "--draft", "--title", f'适配包：{pack["game"]} v{version}', "--notes", notes)
     elif release["body"].strip() != notes:
         raise ValueError(f"Release {tag} already exists with different source provenance")
 
@@ -162,10 +195,14 @@ if __name__ == "__main__":
     publish_command.add_argument("directory", type=Path)
     publish_command.add_argument("slug")
     publish_command.add_argument("version")
+    discover_command = commands.add_parser("discover")
+    discover_command.add_argument("source", type=Path)
     render_command = commands.add_parser("render")
     render_command.add_argument("--check", action="store_true")
     args = parser.parse_args()
     if args.command == "publish":
         publish(args.directory, args.slug, args.version)
+    elif args.command == "discover":
+        print(json.dumps(discover(args.source, read_registry()["packs"], releases_by_tag())))
     else:
         render(args.check)
