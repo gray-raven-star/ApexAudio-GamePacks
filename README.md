@@ -6,7 +6,9 @@ Official game adaptation packages for ApexAudio.
 
 <!-- BEGIN GENERATED DOWNLOADS -->
 
-No official packs have been published here yet.
+| Game | Latest | Engine | Game builds (SHA-256) | Package | History |
+| --- | --- | --- | --- | --- | --- |
+| 怪物猎人：世界 | 1.1.0 | Wwise | MonsterHunterWorld.exe <code>C2EBBBD2C49F216D484E31A5219BED419EB1E5E7D206D02CBA040A3AB79D90EA</code> | [Download](<https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/download/pack/monster-hunter-world/v1.1.0/local.monsterhunterworld.gpack>) | [v1.1.0](<https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/tag/pack/monster-hunter-world/v1.1.0>) |
 
 <!-- END GENERATED DOWNLOADS -->
 

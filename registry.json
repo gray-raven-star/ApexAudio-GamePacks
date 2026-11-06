@@ -1,5 +1,26 @@
 {
   "schemaVersion": 1,
-  "generatedAt": null,
-  "packs": []
+  "generatedAt": "2026-11-06T16:48:07+00:00",
+  "packs": [
+    {
+      "slug": "monster-hunter-world",
+      "packId": "local.monsterhunterworld",
+      "sourceCommit": "4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37",
+      "engine": "Wwise",
+      "version": "1.1.0",
+      "game": "怪物猎人：世界",
+      "compatibility": {
+        "gameBuilds": [
+          {
+            "executable": "MonsterHunterWorld.exe",
+            "sha256": "C2EBBBD2C49F216D484E31A5219BED419EB1E5E7D206D02CBA040A3AB79D90EA"
+          }
+        ]
+      },
+      "sourceUrl": "https://github.com/gray-raven-star/ApexAudio/tree/4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37/gamepacks/monster-hunter-world",
+      "releaseUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/tag/pack/monster-hunter-world/v1.1.0",
+      "downloadUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/download/pack/monster-hunter-world/v1.1.0/local.monsterhunterworld.gpack",
+      "sha256": "31d13dea27197681bed2c74ffa4473358960a8f372b0b7540bb49fd53953b841"
+    }
+  ]
 }
