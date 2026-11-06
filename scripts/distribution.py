@@ -11,13 +11,19 @@ import re
 import subprocess
 from tempfile import TemporaryDirectory
 from urllib.parse import quote
+import urllib.request
 
 
 REGISTRY = Path("registry.json")
 README = Path("README.md")
 SOURCE = "https://github.com/gray-raven-star/ApexAudio"
+RAW_BASE = "https://raw.githubusercontent.com/gray-raven-star/ApexAudio"
 START = "<!-- BEGIN GENERATED DOWNLOADS -->"
 END = "<!-- END GENERATED DOWNLOADS -->"
+TAG_PATTERN = re.compile(
+    r"pack/([a-z0-9]+(?:-[a-z0-9]+)*)/v((?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*))"
+)
+DIGEST_PATTERN = re.compile(r"sha256:([0-9a-fA-F]{64})")
 
 
 def read_registry():
@@ -43,12 +49,75 @@ def releases_by_tag():
     return {release["tag_name"]: release for page in pages for release in page}
 
 
-def discover(source, indexed, releases):
+def raw_json(commit, path):
+    request = urllib.request.Request(
+        f"{RAW_BASE}/{commit}/{path}",
+        headers={"User-Agent": "ApexAudio-distribution"},
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:
+        return json.loads(response.read().decode("utf-8-sig"))
+
+
+def source_commit(body, slug):
+    match = re.fullmatch(
+        rf"Source: {re.escape(SOURCE)}/tree/([0-9a-f]{{40}})/gamepacks/{re.escape(slug)}",
+        (body or "").strip(),
+    )
+    return match[1] if match else None
+
+
+def digest_of(release, name):
+    for asset in release.get("assets") or []:
+        if asset.get("name") != name:
+            continue
+        match = DIGEST_PATTERN.fullmatch(asset.get("digest") or "")
+        if match:
+            return match[1].lower()
+        break
+    raise ValueError(f"Release {release['tag_name']} has no SHA-256 digest for {name}")
+
+
+def recover_package(release, slug, version, raw=raw_json):
+    tag = release["tag_name"]
+    commit = source_commit(release.get("body"), slug)
+    if not commit:
+        raise ValueError(f"Cannot recover {tag} without its source commit")
+    manifest = raw(commit, f"gamepacks/{slug}/manifest.json")
+    game = raw(commit, f"gamepacks/{slug}/game.json")
+    if manifest.get("version") != version:
+        raise ValueError(f"{tag} does not match the manifest version")
+    pack_id = manifest.get("id", "")
+    if not re.fullmatch(r"[a-z0-9][a-z0-9.-]{2,79}", pack_id):
+        raise ValueError(f"{tag} has an invalid package ID")
+    asset = f"{pack_id}.gpack"
+    repo = os.environ["GITHUB_REPOSITORY"]
+    source = f"{SOURCE}/tree/{commit}/gamepacks/{slug}"
+    return {
+        "game": manifest["name"],
+        "sourceCommit": commit,
+        "version": version,
+        "packId": pack_id,
+        "slug": slug,
+        "compatibility": {"gameBuilds": manifest.get("games", [])},
+        "engine": game.get("backend", ""),
+        "sourceUrl": source,
+        "releaseUrl": f"https://github.com/{repo}/releases/tag/{tag}",
+        "downloadUrl": f"https://github.com/{repo}/releases/download/{tag}/{quote(asset)}",
+        "sha256": digest_of(release, asset),
+    }
+
+
+def bump_version(latest, slug, version):
+    latest[slug] = max(latest.get(slug, (0, 0, 0)), version_key(version))
+
+
+def discover(source, indexed, releases, thresholds=None):
     source_ref = subprocess.check_output(["git", "-C", str(source), "rev-parse", "HEAD"], text=True).strip()
     latest = {}
     for pack in indexed:
-        slug, version = pack["slug"], version_key(pack["version"])
-        latest[slug] = max(latest.get(slug, ()), version)
+        bump_version(latest, pack["slug"], pack["version"])
+    for slug, version in (thresholds or {}).items():
+        bump_version(latest, slug, version)
 
     selected = []
     for manifest in sorted((source / "gamepacks").glob("*/manifest.json")):
@@ -62,11 +131,10 @@ def discover(source, indexed, releases):
         previous = releases.get(f"pack/{slug}/v{version}")
         if previous:
             # A prior run may have published the assets before its registry commit failed.
-            notes = previous.get("body") or ""
-            provenance = re.fullmatch(rf"Source: {re.escape(SOURCE)}/tree/([0-9a-f]{{40}})/gamepacks/{re.escape(slug)}", notes.strip())
-            if not provenance:
+            commit = source_commit(previous.get("body"), slug)
+            if not commit:
                 raise ValueError(f"Cannot recover {previous['tag_name']} without its source commit")
-            ref = provenance[1]
+            ref = commit
         selected.append({"slug": slug, "version": version, "source_ref": ref})
     return selected
 
@@ -133,8 +201,61 @@ def publish(directory, slug, version):
         entries.remove(previous)
     entries.append(entry)
     entries.sort(key=lambda item: (item["slug"], version_key(item["version"])))
+    thresholds = registry.setdefault("thresholds", {})
+    if version_key(version) > version_key(thresholds.get(slug, "0.0.0")):
+        thresholds[slug] = version
+    registry["thresholds"] = dict(sorted(thresholds.items()))
     registry["generatedAt"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
     REGISTRY.write_text(json.dumps(registry, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def reconcile(registry, releases, raw=raw_json):
+    """Align the index with the public releases and remember removed versions."""
+    latest = {}
+    for slug, version in (registry.get("thresholds") or {}).items():
+        bump_version(latest, slug, version)
+
+    kept = []
+    removed = []
+    for pack in registry["packs"]:
+        bump_version(latest, pack["slug"], pack["version"])
+        tag = f'pack/{pack["slug"]}/v{pack["version"]}'
+        release = releases.get(tag)
+        if release is None or release.get("draft"):
+            removed.append(tag)
+        else:
+            kept.append(pack)
+
+    present = {(pack["slug"], pack["version"]) for pack in kept}
+    recovered = []
+    warnings = []
+    for tag in sorted(releases):
+        release = releases[tag]
+        if release.get("draft"):
+            continue
+        match = TAG_PATTERN.fullmatch(tag)
+        if not match:
+            continue
+        slug, version = match.groups()
+        bump_version(latest, slug, version)
+        if (slug, version) in present:
+            continue
+        try:
+            entry = recover_package(release, slug, version, raw)
+        except Exception as error:  # A single bad release must not block the whole scan.
+            warnings.append(f"{tag}: {error}")
+            continue
+        kept.append(entry)
+        recovered.append(tag)
+
+    kept.sort(key=lambda pack: (pack["slug"], version_key(pack["version"])))
+    thresholds = {slug: ".".join(map(str, version)) for slug, version in sorted(latest.items())}
+    changed = kept != registry["packs"] or thresholds != (registry.get("thresholds") or {})
+    if changed:
+        registry["packs"] = kept
+        registry["thresholds"] = thresholds
+        registry["generatedAt"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    return {"removed": removed, "recovered": recovered, "warnings": warnings, "changed": changed}
 
 
 def markdown_cell(value):
@@ -197,12 +318,21 @@ if __name__ == "__main__":
     publish_command.add_argument("version")
     discover_command = commands.add_parser("discover")
     discover_command.add_argument("source", type=Path)
+    reconcile_command = commands.add_parser("reconcile")
     render_command = commands.add_parser("render")
     render_command.add_argument("--check", action="store_true")
     args = parser.parse_args()
     if args.command == "publish":
         publish(args.directory, args.slug, args.version)
     elif args.command == "discover":
-        print(json.dumps(discover(args.source, read_registry()["packs"], releases_by_tag())))
+        registry = read_registry()
+        print(json.dumps(discover(args.source, registry["packs"], releases_by_tag(), registry.get("thresholds"))))
+    elif args.command == "reconcile":
+        registry = read_registry()
+        result = reconcile(registry, releases_by_tag())
+        if result["changed"]:
+            REGISTRY.write_text(json.dumps(registry, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            render(False)
+        print(json.dumps(result, ensure_ascii=False))
     else:
         render(args.check)

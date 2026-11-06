@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-11-06T17:08:01+00:00",
+  "generatedAt": "2026-11-06T18:00:09+00:00",
   "packs": [
     {
       "game": "007 First Light",
@@ -242,5 +242,19 @@
       "downloadUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/download/pack/stellar-blade/v0.2.0/local.stellarblade.gpack",
       "sha256": "2a2d62b47e14469f94755e9083c7562bb522d2e9354662b587e5b45bb11527b3"
     }
-  ]
+  ],
+  "thresholds": {
+    "007-first-light": "1.1.1",
+    "cyberpunk2077": "1.1.1",
+    "dragons-dogma-2": "0.2.0",
+    "elden-ring": "0.2.0",
+    "indiana-jones-great-circle": "0.2.1",
+    "kingdom-come-deliverance-2": "1.1.0",
+    "monster-hunter-rise": "0.1.2",
+    "monster-hunter-world": "1.1.0",
+    "palworld": "0.1.1",
+    "rogue-trader": "1.1.1",
+    "slay-the-spire-2": "1.0.1",
+    "stellar-blade": "0.2.0"
+  }
 }
