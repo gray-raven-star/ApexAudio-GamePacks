@@ -68,6 +68,13 @@ jobs:
         env:
           PACK_SLUG: ${{ inputs.slug }}
         run: |
+          $sdk = dotnet --list-sdks | ForEach-Object { ($_ -split ' ')[0] } |
+            Where-Object { $_ -match '^8\.0\.[0-9]+$' } |
+            Sort-Object { [version]$_ } -Descending | Select-Object -First 1
+          if (-not $sdk) { throw '.NET 8 SDK is unavailable.' }
+          @{ sdk = @{ version = $sdk; rollForward = 'disable' } } |
+            ConvertTo-Json | Set-Content -Encoding utf8 global.json
+
           $zip = Join-Path $env:RUNNER_TEMP 'zig.zip'
           Invoke-WebRequest -Uri 'https://ziglang.org/download/0.15.2/zig-x86_64-windows-0.15.2.zip' -OutFile $zip
           if ((Get-FileHash -LiteralPath $zip).Hash -ne '3A0ED1E8799A2F8CE2A6E6290A9FF22E6906F8227865911FB7DDEDC3CC14CB0C') {
