@@ -1,5 +1,246 @@
 {
   "schemaVersion": 1,
-  "generatedAt": null,
-  "packs": []
+  "generatedAt": "2026-11-06T17:08:01+00:00",
+  "packs": [
+    {
+      "game": "007 First Light",
+      "sourceCommit": "4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37",
+      "version": "1.1.1",
+      "packId": "local.007-firstlight",
+      "slug": "007-first-light",
+      "compatibility": {
+        "gameBuilds": [
+          {
+            "executable": "007FirstLight.exe",
+            "sha256": "394BA9DB0F6D26EC083DECCEEE35EF7973A41681C522B9D400CF46FC5709015F"
+          }
+        ]
+      },
+      "engine": "Wwise",
+      "sourceUrl": "https://github.com/gray-raven-star/ApexAudio/tree/4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37/gamepacks/007-first-light",
+      "releaseUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/tag/pack/007-first-light/v1.1.1",
+      "downloadUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/download/pack/007-first-light/v1.1.1/local.007-firstlight.gpack",
+      "sha256": "4281c443eb64a6d7cc6433107a1c265c98b745db1e546e95eb6f6e40ff14fa2d"
+    },
+    {
+      "sourceCommit": "4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37",
+      "slug": "cyberpunk2077",
+      "engine": "Wwise",
+      "game": "赛博朋克 2077",
+      "compatibility": {
+        "gameBuilds": [
+          {
+            "sha256": "A7DE82945C03E041FC7339FCF9066224D98DB2F5D80FEA50F7947BB350A60991",
+            "executable": "Cyberpunk2077.exe"
+          }
+        ]
+      },
+      "packId": "local.cyberpunk2077",
+      "version": "1.1.1",
+      "sourceUrl": "https://github.com/gray-raven-star/ApexAudio/tree/4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37/gamepacks/cyberpunk2077",
+      "releaseUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/tag/pack/cyberpunk2077/v1.1.1",
+      "downloadUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/download/pack/cyberpunk2077/v1.1.1/local.cyberpunk2077.gpack",
+      "sha256": "ddf6522cc3742ab98b5150c50c59946d352a785bcc2c540bb65584f60a14d2d6"
+    },
+    {
+      "sourceCommit": "4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37",
+      "slug": "dragons-dogma-2",
+      "game": "龙之信条 2",
+      "compatibility": {
+        "gameBuilds": [
+          {
+            "executable": "DD2.exe",
+            "sha256": "53D0FA7093CA1B560E0C881C84A6451091F87D3AB678D25F3EFFF08C22128127"
+          }
+        ]
+      },
+      "version": "0.2.0",
+      "engine": "Wwise",
+      "packId": "local.dragonsdogma2",
+      "sourceUrl": "https://github.com/gray-raven-star/ApexAudio/tree/4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37/gamepacks/dragons-dogma-2",
+      "releaseUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/tag/pack/dragons-dogma-2/v0.2.0",
+      "downloadUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/download/pack/dragons-dogma-2/v0.2.0/local.dragonsdogma2.gpack",
+      "sha256": "130637ada8d1bd750877d426ff14e135be3cc1fc1696bcbe30f7c987e36f5b5d"
+    },
+    {
+      "sourceCommit": "4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37",
+      "compatibility": {
+        "gameBuilds": [
+          {
+            "executable": "eldenring.exe",
+            "sha256": "1A3547101327F65D0C76DA2F9190AC0AA66871EA42BAE2AECC61E11A8B597891"
+          }
+        ]
+      },
+      "game": "艾尔登法环",
+      "version": "0.2.0",
+      "packId": "local.elden-ring",
+      "slug": "elden-ring",
+      "engine": "Wwise",
+      "sourceUrl": "https://github.com/gray-raven-star/ApexAudio/tree/4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37/gamepacks/elden-ring",
+      "releaseUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/tag/pack/elden-ring/v0.2.0",
+      "downloadUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/download/pack/elden-ring/v0.2.0/local.elden-ring.gpack",
+      "sha256": "1502276861fece1d06cedc86beaa42fd54b832eba7997f056db76c8145cf6560"
+    },
+    {
+      "sourceCommit": "4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37",
+      "engine": "Wwise",
+      "slug": "indiana-jones-great-circle",
+      "game": "夺宝奇兵：古老之圈",
+      "packId": "local.indiana-great-circle",
+      "version": "0.2.1",
+      "compatibility": {
+        "gameBuilds": [
+          {
+            "executable": "TheGreatCircle.exe",
+            "sha256": "CC647F09786FE8F7093D205E55ADDFC4ABA2D86F36D0496DE9D25247030604ED"
+          }
+        ]
+      },
+      "sourceUrl": "https://github.com/gray-raven-star/ApexAudio/tree/4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37/gamepacks/indiana-jones-great-circle",
+      "releaseUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/tag/pack/indiana-jones-great-circle/v0.2.1",
+      "downloadUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/download/pack/indiana-jones-great-circle/v0.2.1/local.indiana-great-circle.gpack",
+      "sha256": "ca049c5d1af7fe54935b483651cc1218fb9fbd80af15b59dca36f84a3ad6829a"
+    },
+    {
+      "game": "天国：拯救 2",
+      "sourceCommit": "4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37",
+      "compatibility": {
+        "gameBuilds": [
+          {
+            "executable": "KingdomCome.exe",
+            "sha256": "D85B5355842D16290DC0D97E1D02856C6F2811A2021C8957AA24D7782A771B77"
+          }
+        ]
+      },
+      "slug": "kingdom-come-deliverance-2",
+      "engine": "Fmod",
+      "packId": "local.kingdomcome2",
+      "version": "1.1.0",
+      "sourceUrl": "https://github.com/gray-raven-star/ApexAudio/tree/4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37/gamepacks/kingdom-come-deliverance-2",
+      "releaseUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/tag/pack/kingdom-come-deliverance-2/v1.1.0",
+      "downloadUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/download/pack/kingdom-come-deliverance-2/v1.1.0/local.kingdomcome2.gpack",
+      "sha256": "940548dd900020dd50e81d5d505945dfc56df318e5fb997e04c2a3a881c21754"
+    },
+    {
+      "packId": "independent.mhrise.wwise",
+      "sourceCommit": "4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37",
+      "slug": "monster-hunter-rise",
+      "version": "0.1.2",
+      "compatibility": {
+        "gameBuilds": [
+          {
+            "executable": "MonsterHunterRise.exe",
+            "sha256": "29FA23A9CE24613A9B05CE84F7EBFA3262AAF5053B377B43FD8DFC09071AA7FC"
+          }
+        ]
+      },
+      "engine": "Wwise",
+      "game": "怪物猎人：崛起",
+      "sourceUrl": "https://github.com/gray-raven-star/ApexAudio/tree/4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37/gamepacks/monster-hunter-rise",
+      "releaseUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/tag/pack/monster-hunter-rise/v0.1.2",
+      "downloadUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/download/pack/monster-hunter-rise/v0.1.2/independent.mhrise.wwise.gpack",
+      "sha256": "188b04dad752ecfb88269e27e92c6bf4bc5a4422676dfc01a97883629f272649"
+    },
+    {
+      "version": "1.1.0",
+      "packId": "local.monsterhunterworld",
+      "compatibility": {
+        "gameBuilds": [
+          {
+            "executable": "MonsterHunterWorld.exe",
+            "sha256": "C2EBBBD2C49F216D484E31A5219BED419EB1E5E7D206D02CBA040A3AB79D90EA"
+          }
+        ]
+      },
+      "sourceCommit": "4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37",
+      "game": "怪物猎人：世界",
+      "slug": "monster-hunter-world",
+      "engine": "Wwise",
+      "sourceUrl": "https://github.com/gray-raven-star/ApexAudio/tree/4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37/gamepacks/monster-hunter-world",
+      "releaseUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/tag/pack/monster-hunter-world/v1.1.0",
+      "downloadUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/download/pack/monster-hunter-world/v1.1.0/local.monsterhunterworld.gpack",
+      "sha256": "94710844170eb69e2ca9e8be27c5fdb10077f1d5716581338ff007e33aa2c895"
+    },
+    {
+      "sourceCommit": "4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37",
+      "version": "0.1.1",
+      "packId": "independent.palworld.wwise",
+      "slug": "palworld",
+      "game": "幻兽帕鲁",
+      "engine": "Wwise",
+      "compatibility": {
+        "gameBuilds": [
+          {
+            "executable": "Palworld-Win64-Shipping.exe",
+            "sha256": "E590B5E7BFAA3FEA40FAB1A02CC72C8FC5FD6F8631EF2308E95AC56C25195837"
+          }
+        ]
+      },
+      "sourceUrl": "https://github.com/gray-raven-star/ApexAudio/tree/4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37/gamepacks/palworld",
+      "releaseUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/tag/pack/palworld/v0.1.1",
+      "downloadUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/download/pack/palworld/v0.1.1/independent.palworld.wwise.gpack",
+      "sha256": "2157f13edd91b2c0598fd0e221990beb1dfb3ad54c53689e6feaa719e3dadc61"
+    },
+    {
+      "game": "战锤40K：行商浪人",
+      "engine": "Wwise",
+      "sourceCommit": "4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37",
+      "compatibility": {
+        "gameBuilds": [
+          {
+            "executable": "WH40KRT.exe",
+            "sha256": "0A683B537726A6F52771B2FE70D32DBB5A13C5854C7D9ED9F7C8718EBEC9A186"
+          }
+        ]
+      },
+      "packId": "apex.wh40k-rogue-trader",
+      "slug": "rogue-trader",
+      "version": "1.1.1",
+      "sourceUrl": "https://github.com/gray-raven-star/ApexAudio/tree/4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37/gamepacks/rogue-trader",
+      "releaseUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/tag/pack/rogue-trader/v1.1.1",
+      "downloadUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/download/pack/rogue-trader/v1.1.1/apex.wh40k-rogue-trader.gpack",
+      "sha256": "feb721efa12cb65fdaa619f920bbc047fe1c9ed8bbf57f4f3b4a3f39b03a5d28"
+    },
+    {
+      "slug": "slay-the-spire-2",
+      "sourceCommit": "4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37",
+      "version": "1.0.1",
+      "compatibility": {
+        "gameBuilds": [
+          {
+            "executable": "SlayTheSpire2.exe",
+            "sha256": "8602C26BFFD2937E3841835FD8360EF8E974624A543E05977229FD3D062BE231"
+          }
+        ]
+      },
+      "game": "杀戮尖塔 2",
+      "engine": "Fmod",
+      "packId": "apex.slay-the-spire-2",
+      "sourceUrl": "https://github.com/gray-raven-star/ApexAudio/tree/4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37/gamepacks/slay-the-spire-2",
+      "releaseUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/tag/pack/slay-the-spire-2/v1.0.1",
+      "downloadUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/download/pack/slay-the-spire-2/v1.0.1/apex.slay-the-spire-2.gpack",
+      "sha256": "70bf781fe4ce2f9b4955994695037a3f0b8101e9ed267b5dcbf33a512a5d159e"
+    },
+    {
+      "packId": "local.stellarblade",
+      "version": "0.2.0",
+      "sourceCommit": "4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37",
+      "game": "剑星",
+      "slug": "stellar-blade",
+      "engine": "Unreal",
+      "compatibility": {
+        "gameBuilds": [
+          {
+            "executable": "SB-Win64-Shipping.exe",
+            "sha256": "573AAFF1C9455F85EA6036EF6F6CCB0774DE4164722A296276FBBFC7FA87545C"
+          }
+        ]
+      },
+      "sourceUrl": "https://github.com/gray-raven-star/ApexAudio/tree/4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37/gamepacks/stellar-blade",
+      "releaseUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/tag/pack/stellar-blade/v0.2.0",
+      "downloadUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/download/pack/stellar-blade/v0.2.0/local.stellarblade.gpack",
+      "sha256": "2a2d62b47e14469f94755e9083c7562bb522d2e9354662b587e5b45bb11527b3"
+    }
+  ]
 }
