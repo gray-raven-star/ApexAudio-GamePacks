@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-11-06T18:00:09+00:00",
+  "generatedAt": "2026-11-08T14:26:07+00:00",
   "packs": [
     {
       "game": "007 First Light",
@@ -81,6 +81,26 @@
       "releaseUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/tag/pack/elden-ring/v0.2.0",
       "downloadUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/download/pack/elden-ring/v0.2.0/local.elden-ring.gpack",
       "sha256": "1502276861fece1d06cedc86beaa42fd54b832eba7997f056db76c8145cf6560"
+    },
+    {
+      "sourceCommit": "8402521a15e3171de03371ca2970c784481c818d",
+      "game": "霍格沃茨之遗",
+      "engine": "Wwise",
+      "version": "0.1.0",
+      "packId": "local.hogwarts-legacy",
+      "compatibility": {
+        "gameBuilds": [
+          {
+            "executable": "HogwartsLegacy.exe",
+            "sha256": "9CAB3D4214EC292BC7829CB662D25EB8817B9FFC14E33BBB360913F4273B1213"
+          }
+        ]
+      },
+      "slug": "hogwarts-legacy",
+      "sourceUrl": "https://github.com/gray-raven-star/ApexAudio/tree/8402521a15e3171de03371ca2970c784481c818d/gamepacks/hogwarts-legacy",
+      "releaseUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/tag/pack/hogwarts-legacy/v0.1.0",
+      "downloadUrl": "https://github.com/gray-raven-star/ApexAudio-GamePacks/releases/download/pack/hogwarts-legacy/v0.1.0/local.hogwarts-legacy.gpack",
+      "sha256": "a17bac0a9c8c5779f59198b61ab2105265cc2b670db537ddca1691f10d43333b"
     },
     {
       "sourceCommit": "4f35ecb8bd226ba7da7a3ec7bb8dc8ac55fcfc37",
@@ -248,6 +268,7 @@
     "cyberpunk2077": "1.1.1",
     "dragons-dogma-2": "0.2.0",
     "elden-ring": "0.2.0",
+    "hogwarts-legacy": "0.1.0",
     "indiana-jones-great-circle": "0.2.1",
     "kingdom-come-deliverance-2": "1.1.0",
     "monster-hunter-rise": "0.1.2",
